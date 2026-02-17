@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-config
+data:
+  POSTGRES_HOST: "fiapx-db.cwdgo8kgekvj.us-east-1.rds.amazonaws.com"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "auth_db"
+  POSTGRES_USER: "postgres_admin"
+  JWT_EXPIRES_IN: "7d"
+  LOG_LEVEL: "info"
+  ELASTICSEARCH_URL: "http://elasticsearch:9200"
+  ELASTICSEARCH_INDEX: "auth-service-logs"
