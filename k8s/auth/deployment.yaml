@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: auth-app
-          image: vineco/auth-service:latest
+          image: vineco/auth-service:v2.0.0
           ports:
             - containerPort: 8080
           resources:
