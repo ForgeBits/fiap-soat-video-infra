@@ -37,7 +37,7 @@ Remove todos os recursos K8s de um serviço específico.
 ./commands/remove.sh <service>
 ```
 
-**Serviços disponíveis:** `auth`, `api`, `rabbitmq`
+**Serviços disponíveis:** `auth`, `api`, `rabbitmq`, `elasticsearch`, `kibana`
 
 **Exemplo:**
 ```bash
@@ -123,50 +123,6 @@ Aplica todos os recursos K8s de um serviço específico (**auth** ou **api**).
 
 ---
 
-### `reset-auth.sh`
-
-Remove todos os recursos K8s do serviço **auth** e opcionalmente reaplica.
-
-**Uso:**
-```bash
-# Apenas remover os recursos
-./commands/reset-auth.sh
-
-# Remover e reaplicar automaticamente
-./commands/reset-auth.sh --reapply
-./commands/reset-auth.sh -r
-```
-
-**Recursos gerenciados:**
-- `auth-deployment`
-- `auth-service`
-- `auth-configmap`
-- `auth-secret`
-
----
-
-### `reset-api.sh`
-
-Remove todos os recursos K8s do serviço **api** e opcionalmente reaplica.
-
-**Uso:**
-```bash
-# Apenas remover os recursos
-./commands/reset-api.sh
-
-# Remover e reaplicar automaticamente
-./commands/reset-api.sh --reapply
-./commands/reset-api.sh -r
-```
-
-**Recursos gerenciados:**
-- `api-deployment`
-- `api-service`
-- `api-configmap`
-- `api-secret`
-
----
-
 ## Variáveis de Ambiente
 
 O arquivo `.env` na raiz do projeto deve conter as seguintes variáveis:
@@ -206,4 +162,79 @@ API_AWS_ACCESS_KEY_ID=AKIAXXXXXXXXXXXXXXXX
 AWS_SECRET_ACCESS_KEY=sua_secret_key_aws
 API_JWT_SECRET=seu_jwt_secret_api
 ```
+
+---
+
+### `reset-all.sh`
+
+Remove **TODOS** os recursos K8s do projeto. Opcionalmente reaplica com `--rerun`.
+
+**Uso:**
+```bash
+# Apenas remover todos os recursos
+./commands/reset-all.sh
+
+# Remover e reaplicar todos os recursos
+./commands/reset-all.sh --rerun
+./commands/reset-all.sh -r
+```
+
+**O que faz:**
+1. Carrega as variáveis de ambiente do arquivo `.env`
+2. Remove todos os recursos:
+   - Auth (deployment, service, configmap, secret)
+   - API (deployment, service, configmap, secret)
+   - RabbitMQ (deployment, service, configmap, secret)
+   - Infrastructure (Elasticsearch, Kibana)
+3. **Com `--rerun`:** Reaplica todos os recursos na ordem correta:
+   - Infrastructure (Elasticsearch, Kibana)
+   - RabbitMQ
+   - Auth
+   - API
+4. Exibe o status dos pods ao final (somente com `--rerun`)
+
+---
+
+### `load-test.sh`
+
+Executa teste de carga no endpoint de processamento de vídeos.
+
+**Uso:**
+```bash
+./commands/load-test.sh [REQUESTS_PER_SECOND] [DURATION] [URL] [VIDEO_FILE] [FORMAT] [FPS] [TOKEN]
+```
+
+**Parâmetros:**
+| Parâmetro | Descrição | Padrão |
+|-----------|-----------|--------|
+| `REQUESTS_PER_SECOND` | Número de requisições por segundo | 5 |
+| `DURATION` | Duração do teste em segundos | 10 |
+| `URL` | URL do endpoint | `http://localhost:8082/videos/process` |
+| `VIDEO_FILE` | Caminho do arquivo de vídeo | `/home/mt-dev/Videos/OBS/2026-01-08 20-46-44.mp4` |
+| `FORMAT` | Formato de saída | `png` |
+| `FPS` | Frames por segundo | `15` |
+| `TOKEN` | Token JWT de autenticação | Token padrão |
+
+**Exemplos:**
+```bash
+# 5 requisições por segundo durante 10 segundos (padrão)
+./commands/load-test.sh
+
+# 10 requisições por segundo durante 30 segundos
+./commands/load-test.sh 10 30
+
+# 20 requisições por segundo durante 60 segundos em URL customizada
+./commands/load-test.sh 20 60 http://api-service:8082/videos/process
+
+# Exibir ajuda
+./commands/load-test.sh --help
+```
+
+**O que faz:**
+1. Envia múltiplas requisições POST paralelas ao endpoint
+2. Cada requisição inclui o arquivo de vídeo especificado
+3. Exibe o status de cada requisição (sucesso/falha)
+4. Mostra um resumo ao final do teste
+
+---
 
