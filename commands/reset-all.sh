@@ -70,9 +70,18 @@ echo -e "${GREEN}RabbitMQ removido!${NC}"
 echo ""
 
 # Remover Infrastructure (Elasticsearch e Kibana)
-echo -e "${YELLOW}Removendo INFRASTRUCTURE (Elasticsearch/Kibana)...${NC}"
+echo -e "${YELLOW}Removendo INFRASTRUCTURE (PostgreSQL/Elasticsearch/Kibana)...${NC}"
+kubectl delete -f "$ROOT_DIR/k8s/infrastructure/postgres-auth.yaml" --ignore-not-found=true 2>/dev/null
+kubectl delete -f "$ROOT_DIR/k8s/infrastructure/postgres-api.yaml" --ignore-not-found=true 2>/dev/null
 kubectl delete -f "$ROOT_DIR/k8s/infrastructure/elasticsearch.yaml" --ignore-not-found=true 2>/dev/null
 kubectl delete -f "$ROOT_DIR/k8s/infrastructure/kibana.yaml" --ignore-not-found=true 2>/dev/null
+
+# Remover PVCs
+echo -e "${YELLOW}Removendo PVCs...${NC}"
+kubectl delete pvc postgres-auth-storage --ignore-not-found=true 2>/dev/null
+kubectl delete pvc postgres-api-storage --ignore-not-found=true 2>/dev/null
+kubectl delete pvc elastic-storage --ignore-not-found=true 2>/dev/null
+
 echo -e "${GREEN}Infrastructure removido!${NC}"
 echo ""
 
@@ -93,6 +102,9 @@ if [[ "$RERUN" == true ]]; then
 
     # Aplicar Infrastructure
     echo -e "${YELLOW}Aplicando INFRASTRUCTURE...${NC}"
+    kubectl apply -f "$ROOT_DIR/k8s/infrastructure/postgres-auth.yaml"
+    kubectl apply -f "$ROOT_DIR/k8s/infrastructure/postgres-api.yaml"
+    kubectl apply -f "$ROOT_DIR/k8s/infrastructure/redis-api.yaml"
     kubectl apply -f "$ROOT_DIR/k8s/infrastructure/elasticsearch.yaml"
     kubectl apply -f "$ROOT_DIR/k8s/infrastructure/kibana.yaml"
     echo -e "${GREEN}Infrastructure aplicado!${NC}"

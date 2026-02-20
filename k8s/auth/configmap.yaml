@@ -3,10 +3,10 @@ kind: ConfigMap
 metadata:
   name: auth-config
 data:
-  POSTGRES_HOST: "fiapx-db.cwdgo8kgekvj.us-east-1.rds.amazonaws.com"
+  POSTGRES_HOST: "postgres-auth"
   POSTGRES_PORT: "5432"
   POSTGRES_DB: "auth_db"
-  POSTGRES_USER: "postgres_admin"
+  POSTGRES_USER: "auth_user"
   JWT_EXPIRES_IN: "7d"
   LOG_LEVEL: "info"
   ELASTICSEARCH_URL: "http://elasticsearch:9200"

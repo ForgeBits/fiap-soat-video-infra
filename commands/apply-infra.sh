@@ -14,6 +14,15 @@ echo "========================================="
 echo "Aplicando infraestrutura..."
 echo "========================================="
 
+echo "Aplicando PostgreSQL Auth..."
+kubectl apply -f "$INFRA_DIR/postgres-auth.yaml"
+
+echo "Aplicando PostgreSQL API..."
+kubectl apply -f "$INFRA_DIR/postgres-api.yaml"
+
+echo "Aplicando Redis API..."
+kubectl apply -f "$INFRA_DIR/redis-api.yaml"
+
 echo "Aplicando Elasticsearch..."
 kubectl apply -f "$INFRA_DIR/elasticsearch.yaml"
 

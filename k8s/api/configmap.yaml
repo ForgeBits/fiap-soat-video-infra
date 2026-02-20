@@ -9,13 +9,13 @@ data:
   API_VERSION: "v1"
 
   # Database (PostgreSQL)
-  DB_USER: "postgres_admin"
+  DB_USER: "api_user"
   DB_NAME: "api_db"
   DB_PORT: "5432"
-  DB_HOST: "fiapx-db.cwdgo8kgekvj.us-east-1.rds.amazonaws.com"
+  DB_HOST: "postgres-api"
 
   # Redis (Cache)
-  REDIS_HOST: "api-redis.kvdmiv.0001.use1.cache.amazonaws.com"
+  REDIS_HOST: "redis-api"
   REDIS_PORT: "6379"
 
   # RabbitMQ (Message Queue)

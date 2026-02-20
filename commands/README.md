@@ -37,7 +37,7 @@ Remove todos os recursos K8s de um serviço específico.
 ./commands/remove.sh <service>
 ```
 
-**Serviços disponíveis:** `auth`, `api`, `rabbitmq`, `elasticsearch`, `kibana`
+**Serviços disponíveis:** `auth`, `api`, `rabbitmq`, `infrastructure`
 
 **Exemplo:**
 ```bash
@@ -49,6 +49,9 @@ Remove todos os recursos K8s de um serviço específico.
 
 # Remover serviço rabbitmq
 ./commands/remove.sh rabbitmq
+
+# Remover toda infraestrutura (PostgreSQL, Elasticsearch, Kibana)
+./commands/remove.sh infrastructure
 ```
 
 **Recursos removidos:**
@@ -68,7 +71,7 @@ Reinicia os pods de um serviço para refletir alterações em secrets ou configm
 ./commands/restart.sh <service>
 ```
 
-**Serviços disponíveis:** `auth`, `api`, `rabbitmq`, `elasticsearch`, `kibana`
+**Serviços disponíveis:** `auth`, `api`, `rabbitmq`
 
 **Exemplo:**
 ```bash
@@ -77,6 +80,9 @@ Reinicia os pods de um serviço para refletir alterações em secrets ou configm
 
 # Reiniciar serviço api
 ./commands/restart.sh api
+
+# Reiniciar serviço rabbitmq
+./commands/restart.sh rabbitmq
 ```
 
 **O que faz:**
@@ -87,7 +93,7 @@ Reinicia os pods de um serviço para refletir alterações em secrets ou configm
 
 ### `apply-infra.sh`
 
-Aplica os recursos de infraestrutura K8s (Elasticsearch e Kibana).
+Aplica os recursos de infraestrutura K8s (PostgreSQL, Redis, Elasticsearch e Kibana).
 
 **Uso:**
 ```bash
@@ -95,8 +101,37 @@ Aplica os recursos de infraestrutura K8s (Elasticsearch e Kibana).
 ```
 
 **Recursos aplicados:**
-- Elasticsearch (deployment + service)
+- PostgreSQL Auth (statefulset + service + secret + PVC 5Gi)
+- PostgreSQL API (statefulset + service + secret + PVC 5Gi)
+- Redis API (deployment + service + PVC 2Gi)
+- Elasticsearch (deployment + service + PVC 10Gi)
 - Kibana (deployment + service)
+
+**Detalhes dos Bancos de Dados:**
+
+**PostgreSQL Auth:**
+- Database: `auth_db`
+- User: `auth_user`
+- Password: Definida no secret `postgres-auth-secret`
+- Service: `postgres-auth:5432`
+- Storage: 5Gi (persistente)
+
+**PostgreSQL API:**
+- Database: `api_db`
+- User: `api_user`
+- Password: Definida no secret `postgres-api-secret`
+- Service: `postgres-api:5432`
+- Storage: 5Gi (persistente)
+
+**Redis API:**
+- Service: `redis-api:6379`
+- Storage: 2Gi (persistente)
+- Max Memory: 256MB (política: allkeys-lru)
+- Persistence: AOF (append-only file)
+
+**Elasticsearch:**
+- Service: `elasticsearch:9200`
+- Storage: 10Gi (persistente)
 
 ---
 
@@ -146,6 +181,90 @@ O arquivo `.env` na raiz do projeto deve conter as seguintes variáveis:
 
 ---
 
+## Infraestrutura de Bancos de Dados
+
+### PostgreSQL
+
+O projeto utiliza dois bancos de dados PostgreSQL independentes, cada um com armazenamento persistente.
+
+#### Conexão aos Bancos
+
+**PostgreSQL Auth:**
+```bash
+# Dentro do cluster
+Host: postgres-auth
+Port: 5432
+Database: auth_db
+User: auth_user
+Password: auth_password_123 (configurável no secret)
+
+# Connection string
+postgresql://auth_user:auth_password_123@postgres-auth:5432/auth_db
+```
+
+**PostgreSQL API:**
+```bash
+# Dentro do cluster
+Host: postgres-api
+Port: 5432
+Database: api_db
+User: api_user
+Password: api_password_123 (configurável no secret)
+
+# Connection string
+postgresql://api_user:api_password_123@postgres-api:5432/api_db
+```
+
+#### Acessar o banco diretamente
+
+```bash
+# PostgreSQL Auth
+kubectl exec -it statefulset/postgres-auth -- psql -U auth_user -d auth_db
+
+# PostgreSQL API
+kubectl exec -it statefulset/postgres-api -- psql -U api_user -d api_db
+```
+
+#### Backup e Restore
+
+```bash
+# Backup PostgreSQL Auth
+kubectl exec statefulset/postgres-auth -- pg_dump -U auth_user auth_db > backup-auth.sql
+
+# Restore PostgreSQL Auth
+kubectl exec -i statefulset/postgres-auth -- psql -U auth_user auth_db < backup-auth.sql
+
+# Backup PostgreSQL API
+kubectl exec statefulset/postgres-api -- pg_dump -U api_user api_db > backup-api.sql
+
+# Restore PostgreSQL API
+kubectl exec -i statefulset/postgres-api -- psql -U api_user api_db < backup-api.sql
+```
+
+#### Alterar Senha do PostgreSQL
+
+Para alterar a senha, edite o secret correspondente:
+
+```bash
+# Editar secret do PostgreSQL Auth
+kubectl edit secret postgres-auth-secret
+
+# Editar secret do PostgreSQL API
+kubectl edit secret postgres-api-secret
+```
+
+Após alterar, reinicie o StatefulSet:
+
+```bash
+# Reiniciar PostgreSQL Auth
+kubectl rollout restart statefulset/postgres-auth
+
+# Reiniciar PostgreSQL API
+kubectl rollout restart statefulset/postgres-api
+```
+
+---
+
 ## Exemplo de `.env`
 
 ```env
@@ -185,9 +304,10 @@ Remove **TODOS** os recursos K8s do projeto. Opcionalmente reaplica com `--rerun
    - Auth (deployment, service, configmap, secret)
    - API (deployment, service, configmap, secret)
    - RabbitMQ (deployment, service, configmap, secret)
-   - Infrastructure (Elasticsearch, Kibana)
+   - Infrastructure (PostgreSQL Auth, PostgreSQL API, Redis API, Elasticsearch, Kibana)
+   - PVCs (postgres-auth-storage, postgres-api-storage, redis-api-storage, elastic-storage)
 3. **Com `--rerun`:** Reaplica todos os recursos na ordem correta:
-   - Infrastructure (Elasticsearch, Kibana)
+   - Infrastructure (PostgreSQL Auth, PostgreSQL API, Redis API, Elasticsearch, Kibana)
    - RabbitMQ
    - Auth
    - API

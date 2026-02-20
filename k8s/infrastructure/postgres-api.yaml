@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-api-storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-api
+spec:
+  serviceName: postgres-api
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-api
+  template:
+    metadata:
+      labels:
+        app: postgres-api
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: api_db
+            - name: POSTGRES_USER
+              value: api_user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-api-secret
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-api-storage
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: postgres-api-storage
+          persistentVolumeClaim:
+            claimName: postgres-api-storage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-api
+spec:
+  selector:
+    app: postgres-api
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-api-secret
+type: Opaque
+stringData:
+  password: api_password_123
+
