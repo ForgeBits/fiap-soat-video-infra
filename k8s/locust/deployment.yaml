@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-master
+  namespace: fiapx
+  labels:
+    app: locust
+    role: master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: locust
+      role: master
+  template:
+    metadata:
+      labels:
+        app: locust
+        role: master
+    spec:
+      containers:
+        - name: locust
+          image: locustio/locust:latest
+          ports:
+            - containerPort: 8089
+              name: web
+            - containerPort: 5557
+              name: master
+          env:
+            - name: LOCUST_MODE
+              value: "master"
+            - name: LOCUST_HOST
+              value: "http://auth-service:3000"
+            - name: LOCUST_USERS
+              value: "100"
+            - name: LOCUST_SPAWN_RATE
+              value: "10"
+            - name: LOCUST_RUN_TIME
+              value: "5m"
+            - name: LOCUST_LOGLEVEL
+              value: "INFO"
+          volumeMounts:
+            - name: locust-script
+              mountPath: /home/locust
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          command:
+            - "locust"
+            - "--master"
+            - "--web-host=0.0.0.0"
+            - "--web-port=8089"
+      volumes:
+        - name: locust-script
+          configMap:
+            name: locust-script
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-worker
+  namespace: fiapx
+  labels:
+    app: locust
+    role: worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: locust
+      role: worker
+  template:
+    metadata:
+      labels:
+        app: locust
+        role: worker
+    spec:
+      containers:
+        - name: locust
+          image: locustio/locust:latest
+          env:
+            - name: LOCUST_MODE
+              value: "worker"
+            - name: LOCUST_MASTER_NODE_HOST
+              value: "locust-master"
+            - name: LOCUST_MASTER_NODE_PORT
+              value: "5557"
+            - name: LOCUST_LOGLEVEL
+              value: "INFO"
+          volumeMounts:
+            - name: locust-script
+              mountPath: /home/locust
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          command:
+            - "locust"
+            - "--worker"
+            - "--master-host=locust-master"
+            - "--master-port=5557"
+      volumes:
+        - name: locust-script
+          configMap:
+            name: locust-script
+

@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: api-app
-          image: vineco/api-fiapx-11soat:v2.0.2
+          image: vineco/api-fiapx-11soat:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           envFrom:

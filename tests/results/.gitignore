@@ -1,9 +1,0 @@
-# Ignorar todos os arquivos de relatório e resultados
-*.md
-*.json
-*.html
-
-# Exceto o README e .gitkeep
-!README.md
-!.gitkeep
-
