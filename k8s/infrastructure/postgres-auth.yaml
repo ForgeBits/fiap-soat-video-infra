@@ -44,16 +44,27 @@ spec:
                   key: password
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
+          args:
+            - "-c"
+            - "max_connections=300"
+            - "-c"
+            - "shared_buffers=512MB"
+            - "-c"
+            - "effective_cache_size=1536MB"
+            - "-c"
+            - "work_mem=2MB"
+            - "-c"
+            - "max_worker_processes=4"
           volumeMounts:
             - name: postgres-auth-storage
               mountPath: /var/lib/postgresql/data
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
-            limits:
-              memory: "512Mi"
+              memory: "1Gi"
               cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
       volumes:
         - name: postgres-auth-storage
           persistentVolumeClaim:
