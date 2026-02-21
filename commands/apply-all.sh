@@ -117,6 +117,9 @@ kubectl apply -f "$ROOT_DIR/k8s/auth/deployment.yaml"
 echo "  → Service..."
 kubectl apply -f "$ROOT_DIR/k8s/auth/service.yaml"
 
+echo "  → HPA (Horizontal Pod Autoscaler)..."
+kubectl apply -f "$ROOT_DIR/k8s/auth/hpa.yaml"
+
 echo -e "${GREEN}✓ Auth Service aplicado!${NC}"
 echo ""
 

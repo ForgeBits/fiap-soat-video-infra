@@ -49,6 +49,12 @@ kubectl apply -f "$SERVICE_DIR/deployment.yaml"
 echo "Aplicando service..."
 kubectl apply -f "$SERVICE_DIR/service.yaml"
 
+# Aplicar HPA se existir
+if [[ -f "$SERVICE_DIR/hpa.yaml" ]]; then
+  echo "Aplicando HPA (autoscaling)..."
+  kubectl apply -f "$SERVICE_DIR/hpa.yaml"
+fi
+
 echo ""
 echo "Serviço $SERVICE aplicado com sucesso!"
 

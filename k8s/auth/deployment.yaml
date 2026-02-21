@@ -4,7 +4,6 @@ metadata:
   name: auth-service
   namespace: fiapx
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: auth-service
