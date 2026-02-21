@@ -44,11 +44,11 @@ echo "========================================="
 echo "Reiniciando serviço $SERVICE..."
 echo "========================================="
 
-kubectl rollout restart deployment/$DEPLOYMENT
+kubectl rollout restart deployment/$DEPLOYMENT -n fiapx
 
 echo ""
 echo "Aguardando rollout..."
-kubectl rollout status deployment/$DEPLOYMENT
+kubectl rollout status deployment/$DEPLOYMENT -n fiapx
 
 echo ""
 echo "Serviço $SERVICE reiniciado com sucesso!"

@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: api-config
+  namespace: fiapx
 data:
   # Application
   NODE_ENV: "development"
@@ -27,7 +28,7 @@ data:
 
   # AWS S3 (Storage)
   AWS_REGION: "us-east-1"
-  AWS_S3_BUCKET: "fiapx-storage-66df9d5f"
+  AWS_S3_BUCKET: "fiap-video-worker"
 
   # Auth Service
   AUTH_GATE: "http://auth-service:3000"

@@ -8,6 +8,9 @@ set -e
 ROOT_DIR="$(dirname "$0")/.."
 export $(grep -v '^#' "$ROOT_DIR/.env" | xargs)
 
+# Criar namespace se não existir
+kubectl get namespace fiapx &>/dev/null || kubectl create namespace fiapx
+
 INFRA_DIR="$ROOT_DIR/k8s/infrastructure"
 
 echo "========================================="

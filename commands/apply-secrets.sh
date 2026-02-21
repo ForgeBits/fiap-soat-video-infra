@@ -8,17 +8,20 @@ set -e
 ROOT_DIR="$(dirname "$0")/.."
 export $(grep -v '^#' "$ROOT_DIR/.env" | xargs)
 
+# Criar namespace se não existir
+kubectl get namespace fiapx &>/dev/null || kubectl create namespace fiapx
+
 echo "Removendo secret de auth..."
-kubectl delete secret auth-secret --ignore-not-found
+kubectl delete secret auth-secret -n fiapx --ignore-not-found
 
 echo "Removendo secret de api..."
-kubectl delete secret api-secret --ignore-not-found
+kubectl delete secret api-secret -n fiapx --ignore-not-found
 
 echo "Removendo configmap de auth..."
-kubectl delete configmap auth-configmap --ignore-not-found
+kubectl delete configmap auth-configmap -n fiapx --ignore-not-found
 
 echo "Removendo configmap de api..."
-kubectl delete configmap api-configmap --ignore-not-found
+kubectl delete configmap api-configmap -n fiapx --ignore-not-found
 
 echo "Aplicando secret de auth..."
 envsubst < "$ROOT_DIR/k8s/auth/secret.yaml" | kubectl apply -f -

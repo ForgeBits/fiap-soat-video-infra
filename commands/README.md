@@ -12,6 +12,39 @@ Scripts utilitários para gerenciar os recursos Kubernetes do projeto.
 
 ## Scripts Disponíveis
 
+### `apply-all.sh`
+
+Aplica **TODOS** os recursos K8s do projeto na ordem correta.
+
+**Uso:**
+```bash
+./commands/apply-all.sh
+```
+
+**O que faz:**
+1. Carrega as variáveis de ambiente do arquivo `.env`
+2. Cria o namespace `fiapx` (se não existir)
+3. Aplica recursos na ordem:
+   - **Infrastructure**: PostgreSQL Auth, PostgreSQL API, Redis API, Elasticsearch, Kibana
+   - **RabbitMQ**: Message broker
+   - **Auth Service**: Serviço de autenticação
+   - **API Service**: Serviço principal da aplicação
+4. Aguarda pods ficarem prontos entre cada etapa
+5. Exibe status final de todos os pods
+
+**Ordem de aplicação garantida:**
+```
+1. Namespace fiapx
+2. PostgreSQL Auth + PostgreSQL API + Redis + Elasticsearch + Kibana
+3. RabbitMQ (depende de bancos)
+4. Auth Service (depende de PostgreSQL Auth)
+5. API Service (depende de todos os anteriores)
+```
+
+**Tempo estimado:** 3-5 minutos (dependendo do cluster)
+
+---
+
 ### `apply-secrets.sh`
 
 Remove e reaplica os secrets dos serviços **auth** e **api**.
@@ -286,32 +319,32 @@ API_JWT_SECRET=seu_jwt_secret_api
 
 ### `reset-all.sh`
 
-Remove **TODOS** os recursos K8s do projeto. Opcionalmente reaplica com `--rerun`.
+Remove **TODOS** os recursos K8s do projeto.
 
 **Uso:**
 ```bash
-# Apenas remover todos os recursos
 ./commands/reset-all.sh
-
-# Remover e reaplicar todos os recursos
-./commands/reset-all.sh --rerun
-./commands/reset-all.sh -r
 ```
 
 **O que faz:**
-1. Carrega as variáveis de ambiente do arquivo `.env`
-2. Remove todos os recursos:
+1. Remove todos os recursos K8s:
    - Auth (deployment, service, configmap, secret)
    - API (deployment, service, configmap, secret)
    - RabbitMQ (deployment, service, configmap, secret)
-   - Infrastructure (PostgreSQL Auth, PostgreSQL API, Redis API, Elasticsearch, Kibana)
-   - PVCs (postgres-auth-storage, postgres-api-storage, redis-api-storage, elastic-storage)
-3. **Com `--rerun`:** Reaplica todos os recursos na ordem correta:
-   - Infrastructure (PostgreSQL Auth, PostgreSQL API, Redis API, Elasticsearch, Kibana)
-   - RabbitMQ
-   - Auth
-   - API
-4. Exibe o status dos pods ao final (somente com `--rerun`)
+   - Infrastructure (PostgreSQL Auth, PostgreSQL API, Redis API, MinIO, Elasticsearch, Kibana)
+   - PVCs (postgres-auth-storage, postgres-api-storage, redis-api-storage, minio-storage, elastic-storage)
+2. Mostra instruções de como reaplicar manualmente
+
+**Para reaplicar após remover:**
+```bash
+# Aplicar infraestrutura
+./commands/apply-infra.sh
+
+# Aplicar serviços
+./commands/apply.sh rabbitmq
+./commands/apply.sh auth
+./commands/apply.sh api
+```
 
 ---
 
