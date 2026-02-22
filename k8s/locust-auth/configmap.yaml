@@ -1,0 +1,174 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: locust-script
+  namespace: fiapx
+data:
+  locustfile.py: |
+    from locust import HttpUser, task, between, events
+    import time
+    import random
+    import json
+
+    class AuthUser(HttpUser):
+        """
+        Usuário Locust para teste de carga do Auth Service
+        """
+        
+        # Tempo de espera entre requisições (0-1 segundo)
+        wait_time = between(0, 1)
+        
+        # Token será armazenado após login
+        token = None
+        # Email do usuário criado
+        user_email = None
+        
+        def on_start(self):
+            """
+            Executado quando um usuário inicia
+            Cria um usuário e faz login
+            """
+            self.client.headers.update({
+                'Content-Type': 'application/json',
+                'User-Agent': 'Locust-Auth-LoadTest/1.0'
+            })
+            
+            # Criar usuário para usar no login
+            self.user_email = self.generate_email()
+            response = self.client.post(
+                "/auth/register",
+                json={
+                    "email": self.user_email,
+                    "password": "Senha123"
+                },
+                catch_response=True,
+                name="SETUP: Register user"
+            )
+            
+            if response.status_code == 201:
+                # Fazer login para obter token
+                login_response = self.client.post(
+                    "/auth/login",
+                    json={
+                        "email": self.user_email,
+                        "password": "Senha123"
+                    },
+                    catch_response=True,
+                    name="SETUP: Login user"
+                )
+                
+                if login_response.status_code == 200:
+                    try:
+                        data = login_response.json()
+                        if 'token' in data:
+                            self.token = data['token']
+                    except:
+                        pass
+        
+        def generate_email(self):
+            """
+            Gera email único para teste
+            """
+            timestamp = int(time.time() * 1000000)
+            random_num = random.randint(1, 999999)
+            return f"authuser_{timestamp}_{random_num}@loadtest.com"
+        
+        @task(10)
+        def register_user(self):
+            """
+            Teste de registro de usuário (peso 10)
+            """
+            email = self.generate_email()
+            
+            payload = {
+                "email": email,
+                "password": "Senha123"
+            }
+            
+            with self.client.post(
+                "/auth/register",
+                json=payload,
+                catch_response=True,
+                name="POST /auth/register"
+            ) as response:
+                if response.status_code == 201:
+                    response.success()
+                elif response.status_code >= 200 and response.status_code < 300:
+                    response.success()
+                else:
+                    response.failure(f"Status {response.status_code}: {response.text[:100]}")
+        
+        @task(5)
+        def login_user(self):
+            """
+            Teste de login de usuário (peso 5)
+            Usa o usuário criado no on_start
+            """
+            if not self.user_email:
+                return
+            
+            payload = {
+                "email": self.user_email,
+                "password": "Senha123"
+            }
+            
+            with self.client.post(
+                "/auth/login",
+                json=payload,
+                catch_response=True,
+                name="POST /auth/login"
+            ) as response:
+                if response.status_code == 200:
+                    response.success()
+                    # Atualizar token
+                    try:
+                        data = response.json()
+                        if 'token' in data:
+                            self.token = data['token']
+                    except:
+                        pass
+                elif response.status_code >= 200 and response.status_code < 300:
+                    response.success()
+                else:
+                    response.failure(f"Status {response.status_code}: {response.text[:100]}")
+        
+        @task(3)
+        def validate_token(self):
+            """
+            Valida o token JWT (peso 3)
+            """
+            if not self.token:
+                return
+            
+            headers = {
+                'Authorization': f'Bearer {self.token}'
+            }
+            
+            with self.client.post(
+                "/auth/validate",
+                headers=headers,
+                catch_response=True,
+                name="POST /auth/validate"
+            ) as response:
+                if response.status_code >= 200 and response.status_code < 300:
+                    response.success()
+                else:
+                    response.failure(f"Status {response.status_code}: {response.text[:100]}")
+
+    @events.test_start.add_listener
+    def on_test_start(environment, **kwargs):
+        print("🚀 Iniciando teste de carga do Auth Service...")
+        print(f"📍 Target: {environment.host}")
+
+    @events.test_stop.add_listener
+    def on_test_stop(environment, **kwargs):
+        print("✅ Teste de carga do Auth finalizado!")
+        stats = environment.stats
+        print(f"\n📊 Estatísticas:")
+        print(f"  Total de requisições: {stats.total.num_requests}")
+        print(f"  Requisições com falha: {stats.total.num_failures}")
+        print(f"  Taxa de falha: {stats.total.fail_ratio * 100:.2f}%")
+        print(f"  RPS médio: {stats.total.total_rps:.2f}")
+        print(f"  Tempo médio: {stats.total.avg_response_time:.2f}ms")
+        print(f"  P95: {stats.total.get_response_time_percentile(0.95):.2f}ms")
+

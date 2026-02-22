@@ -17,7 +17,7 @@ spec:
           image: vineco/auth-service:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 8080
+            - containerPort: 3000
           resources:
             requests:
               cpu: "400m"

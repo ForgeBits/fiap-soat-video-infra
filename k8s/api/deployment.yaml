@@ -4,7 +4,6 @@ metadata:
   name: api-service
   namespace: fiapx
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: api-service
@@ -18,7 +17,14 @@ spec:
           image: vineco/api-fiapx-11soat:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 3000
+            - containerPort: 3001
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
           envFrom:
             - configMapRef:
                 name: api-config
