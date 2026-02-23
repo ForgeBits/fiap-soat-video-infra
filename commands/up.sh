@@ -75,15 +75,16 @@ apply_service() {
 show_help() {
     echo "Uso: $0 [serviço1,serviço2,...] [--locust-auth] [--locust-api] [--locust]"
     echo ""
-    echo "Sem argumentos: sobe TUDO (infra + rabbitmq + auth + api)"
+    echo "Sem argumentos: sobe TUDO (infra + rabbitmq + auth + api + worker)"
     echo ""
-    echo "Serviços: infra, rabbitmq, auth, api, locust-auth, locust-api"
+    echo "Serviços: infra, rabbitmq, auth, api, worker, locust-auth, locust-api"
     echo ""
     echo "Exemplos:"
     echo "  $0                     # Sobe tudo"
     echo "  $0 auth                # Sobe só o auth"
     echo "  $0 auth,api            # Sobe auth e api"
     echo "  $0 infra,rabbitmq      # Sobe infra e rabbitmq"
+    echo "  $0 worker              # Sobe só o worker"
     echo "  $0 --locust-auth       # Sobe tudo + locust do auth"
     echo "  $0 --locust-api        # Sobe tudo + locust da api"
     echo "  $0 --locust            # Sobe tudo + ambos locust"
@@ -120,6 +121,7 @@ if [[ "$SERVICES_ARG" == "all" ]]; then
     echo ""
     apply_service auth
     apply_service api
+    apply_service worker
 else
     IFS=',' read -ra SERVICES <<< "$SERVICES_ARG"
     for svc in "${SERVICES[@]}"; do

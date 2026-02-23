@@ -86,6 +86,7 @@ SERVICES_ARG="${1:-all}"
 if [[ "$SERVICES_ARG" == "all" ]]; then
     remove_service locust-api
     remove_service locust-auth
+    remove_service worker
     remove_service api
     remove_service auth
     remove_service rabbitmq
