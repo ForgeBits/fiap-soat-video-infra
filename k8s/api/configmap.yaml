@@ -25,13 +25,14 @@ data:
   RABBITMQ_MANAGEMENT_PORT: "15672"
   RABBITMQ_USER: "admin"
   RABBITMQ_TLS: "false"
+  RABBITMQ_QUEUE_PROCESSING: "batch.video.processing"
 
   # AWS S3 (Storage)
   AWS_REGION: "us-east-1"
   AWS_S3_BUCKET: "fiap-video-worker"
 
   # Auth Service
-  AUTH_GATE: "http://auth-service:3000"
+  AUTH_GATE: "http://auth-service:80"
   MOCK_AUTH: "false"
 
   # Monitoring (Elasticsearch + Kibana)

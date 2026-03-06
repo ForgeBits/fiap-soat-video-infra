@@ -80,17 +80,15 @@ Spawn rate: 5
 
 ### **Locust Auth:**
 ```
-locust-master (1 pod)      → UI + coordenação
-locust-worker (3 pods)     → Execução dos testes
+locust-master (1 pod)      → UI + Execução
 ```
 
 ### **Locust API:**
 ```
-locust-api-master (1 pod)  → UI + coordenação
-locust-api-worker (3 pods) → Execução dos testes
+locust-api-master (1 pod)  → UI + Execução
 ```
 
-**Total: 8 pods do Locust**
+**Total: 2 pods do Locust**
 
 ---
 
@@ -112,15 +110,6 @@ kubectl edit configmap locust-api-script -n fiapx
 
 # Aplicar
 ./commands/reload.sh locust-api
-```
-
-### **Escalar workers:**
-```bash
-# Locust Auth
-kubectl scale deployment locust-worker -n fiapx --replicas=10
-
-# Locust API
-kubectl scale deployment locust-api-worker -n fiapx --replicas=10
 ```
 
 ### **Remover:**
@@ -170,12 +159,12 @@ watch kubectl get hpa api-service-hpa -n fiapx
 k8s/
 ├── locust-auth/
 │   ├── configmap.yaml     # Script Python (Auth)
-│   ├── deployment.yaml    # Master + Workers
+│   ├── deployment.yaml    # Standalone (Master)
 │   └── service.yaml       # Porta 8089
 │
 └── locust-api/
     ├── configmap.yaml     # Script Python (API)
-    ├── deployment.yaml    # Master + Workers
+    ├── deployment.yaml    # Standalone (Master)
     └── service.yaml       # Porta 8090
 ```
 
@@ -214,13 +203,7 @@ kubectl get pods -n fiapx | grep locust
 **Output esperado:**
 ```
 locust-master-xxx          1/1  Running  (Auth)
-locust-worker-xxx          1/1  Running  (Auth)
-locust-worker-xxx          1/1  Running  (Auth)
-locust-worker-xxx          1/1  Running  (Auth)
 locust-api-master-xxx      1/1  Running  (API)
-locust-api-worker-xxx      1/1  Running  (API)
-locust-api-worker-xxx      1/1  Running  (API)
-locust-api-worker-xxx      1/1  Running  (API)
 ```
 
 **Pronto para testes! 🦗🚀**

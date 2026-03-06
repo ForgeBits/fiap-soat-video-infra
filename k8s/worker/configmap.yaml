@@ -9,12 +9,15 @@ data:
   NODE_ENV: "development"
 
   # RabbitMQ Configuration
-  RABBITMQ_HOST: "rab1bitmq-service"
+  RABBITMQ_HOST: "rabbitmq-service"
   RABBITMQ_PORT: "5672"
   RABBITMQ_USER: "admin"
   VIDEO_PROCESSING_QUEUE: "video.processing"
   VIDEO_COMPLETED_QUEUE: "video.completed"
   BATCH_VIDEO_PROCESSING_QUEUE: "batch.video.processing"
+
+  # Callback URL for notifying the main application about video processing status
+  VIDEO_CALLBACK_URL: "http://api-service:3001/videos/callback"
 
   # AWS S3 Configuration
   AWS_REGION: "us-east-1"
@@ -31,4 +34,5 @@ data:
   # Email Notifications (AWS SES)
   EMAIL_ENABLED: "true"
   EMAIL_FROM: "noreply@fiapx.com"
+
 

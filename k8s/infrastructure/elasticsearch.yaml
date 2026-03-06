@@ -1,21 +1,10 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: elastic-storage
-  namespace: fiapx
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
----
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: elasticsearch
   namespace: fiapx
 spec:
+  serviceName: "elasticsearch"
   replicas: 1
   selector:
     matchLabels:
@@ -40,10 +29,14 @@ spec:
           volumeMounts:
             - name: elastic-storage
               mountPath: /usr/share/elasticsearch/data
-      volumes:
-        - name: elastic-storage
-          persistentVolumeClaim:
-            claimName: elastic-storage
+  volumeClaimTemplates:
+    - metadata:
+        name: elastic-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
 ---
 apiVersion: v1
 kind: Service

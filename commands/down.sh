@@ -22,10 +22,10 @@ remove_infrastructure() {
     done
 
     echo -e "${YELLOW}  Removendo PVCs...${NC}"
-    for pvc in postgres-auth-storage postgres-api-storage redis-api-storage elastic-storage minio-storage; do
+    for pvc in postgres-api-storage redis-api-storage minio-storage; do
         kubectl delete pvc "$pvc" -n fiapx --ignore-not-found=true 2>/dev/null
     done
-    echo -e "${GREEN}  ✓ PVCs removidos${NC}"
+    echo -e "${GREEN}  ✓ PVCs removidos (elastic-storage preservado)${NC}"
     echo ""
 }
 
@@ -63,14 +63,13 @@ show_help() {
     echo ""
     echo "Sem argumentos: remove TUDO"
     echo ""
-    echo "Serviços: infra, rabbitmq, auth, api, locust-auth, locust-api"
+    echo "Serviços: infra, rabbitmq, auth, api, worker, locust-auth"
     echo ""
     echo "Exemplos:"
     echo "  $0                     # Remove tudo"
     echo "  $0 auth                # Remove só o auth"
     echo "  $0 auth,api            # Remove auth e api"
     echo "  $0 locust-auth         # Remove locust do auth"
-    echo "  $0 locust-api          # Remove locust da api"
     exit 0
 }
 
@@ -84,7 +83,6 @@ echo ""
 SERVICES_ARG="${1:-all}"
 
 if [[ "$SERVICES_ARG" == "all" ]]; then
-    remove_service locust-api
     remove_service locust-auth
     remove_service worker
     remove_service api

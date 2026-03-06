@@ -4,6 +4,7 @@ metadata:
   name: api-service
   namespace: fiapx
 spec:
+  type: ClusterIP
   selector:
     app: api-service
   ports:

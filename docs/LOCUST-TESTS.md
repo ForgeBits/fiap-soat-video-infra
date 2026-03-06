@@ -144,7 +144,6 @@ kubectl edit configmap locust-script -n fiapx
 ### **Reaplicar:**
 ```bash
 kubectl rollout restart deployment/locust-master -n fiapx
-kubectl rollout restart deployment/locust-worker -n fiapx
 ```
 
 ---
@@ -168,11 +167,6 @@ kubectl rollout restart deployment/locust-worker -n fiapx
 ---
 
 ## 💡 Dicas
-
-### **Aumentar workers para mais carga:**
-```bash
-kubectl scale deployment locust-worker -n fiapx --replicas=10
-```
 
 ### **Ver logs:**
 ```bash

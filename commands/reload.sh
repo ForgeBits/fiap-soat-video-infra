@@ -31,7 +31,6 @@ get_deployment_name() {
         api) echo "api-service" ;;
         rabbitmq) echo "rabbitmq" ;;
         locust-auth) echo "locust-master" ;;
-        locust-api) echo "locust-api-master" ;;
         *) echo "$1" ;;
     esac
 }
@@ -42,7 +41,7 @@ show_help() {
     echo "Reaplicar configmap + secret e reinicia os pods de um serviço."
     echo "Use quando alterar uma env, configmap ou secret."
     echo ""
-    echo "Serviços: auth, api, worker, rabbitmq, locust-auth, locust-api"
+    echo "Serviços: auth, api, worker, rabbitmq, locust-auth"
     echo ""
     echo "Exemplos:"
     echo "  $0 auth            # Recarrega auth"
@@ -50,7 +49,6 @@ show_help() {
     echo "  $0 worker          # Recarrega worker"
     echo "  $0 auth,api        # Recarrega auth e api"
     echo "  $0 locust-auth     # Recarrega locust do auth"
-    echo "  $0 locust-api      # Recarrega locust da api"
     exit 0
 }
 
@@ -91,16 +89,15 @@ reload_service() {
     kubectl rollout restart deployment/"$deployment" -n fiapx
     kubectl rollout status deployment/"$deployment" -n fiapx --timeout=120s
 
-    # Se for locust-auth, reiniciar workers também
-    if [[ "$svc" == "locust-auth" ]]; then
-        kubectl rollout restart deployment/locust-worker -n fiapx
-        kubectl rollout status deployment/locust-worker -n fiapx --timeout=120s
-    fi
-
-    # Se for locust-api, reiniciar workers também
-    if [[ "$svc" == "locust-api" ]]; then
-        kubectl rollout restart deployment/locust-api-worker -n fiapx
-        kubectl rollout status deployment/locust-api-worker -n fiapx --timeout=120s
+    # Se for o auth ou api, rodar migrações após o restart
+    if [[ "$svc" == "auth" ]]; then
+        echo -e "${YELLOW}  Executando migrações Prisma (Auth)...${NC}"
+        AUTH_POD=$(kubectl get pods -n fiapx -l app=auth-service -o jsonpath="{.items[0].metadata.name}")
+        kubectl exec -n fiapx "$AUTH_POD" -- npx prisma migrate deploy || echo -e "${RED}  ✗ Falha ao executar migrações no Auth${NC}"
+    elif [[ "$svc" == "api" ]]; then
+        echo -e "${YELLOW}  Executando migrações Prisma (API)...${NC}"
+        API_POD=$(kubectl get pods -n fiapx -l app=api-service -o jsonpath="{.items[0].metadata.name}")
+        kubectl exec -n fiapx "$API_POD" -- npx prisma migrate deploy || echo -e "${RED}  ✗ Falha ao executar migrações na API${NC}"
     fi
 
     echo -e "${GREEN}  ✓ $svc recarregado!${NC}"

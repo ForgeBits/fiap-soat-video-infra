@@ -4,6 +4,7 @@ metadata:
   name: worker-service
   namespace: fiapx
 spec:
+  type: ClusterIP
   selector:
     app: worker-service
   ports:

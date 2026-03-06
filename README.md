@@ -117,12 +117,11 @@ cp .env.example .env
 
 ## 🗄️ Bancos de Dados
 
-### PostgreSQL Auth
-- **Host**: `postgres-auth:5432`
+### PostgreSQL Auth (via PGBouncer)
+- **Host**: `pgbouncer-auth:5432`
 - **Database**: `auth_db`
 - **User**: `auth_user`
-- **Storage**: 5Gi (persistente)
-- **Connection String**: `postgresql://auth_user:password@postgres-auth:5432/auth_db`
+- **Connection String**: `postgresql://auth_user:auth_password_123@pgbouncer-auth:5432/auth_db`
 
 ### PostgreSQL API
 - **Host**: `postgres-api:5432`
@@ -145,7 +144,7 @@ kubectl exec -it deployment/redis-api -- redis-cli
 
 ```bash
 # PostgreSQL Auth
-kubectl exec -it statefulset/postgres-auth -- psql -U auth_user -d auth_db
+kubectl exec -it deployment/pgbouncer-auth -- psql -h localhost -U auth_user -d auth_db
 
 # PostgreSQL API
 kubectl exec -it statefulset/postgres-api -- psql -U api_user -d api_db
@@ -215,7 +214,7 @@ Criar arquivo `.env` na raiz do projeto:
 ```env
 # Auth Service
 AUTH_POSTGRES_PASSWORD=sua_senha_auth
-AUTH_DATABASE_URL=postgresql://auth_user:senha@postgres-auth:5432/auth_db
+AUTH_DATABASE_URL=postgresql://auth_user:auth_password_123@pgbouncer-auth:5432/auth_db
 AUTH_JWT_SECRET=seu_jwt_secret_auth
 
 # API Service

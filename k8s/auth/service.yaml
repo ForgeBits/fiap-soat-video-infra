@@ -4,9 +4,10 @@ metadata:
   name: auth-service
   namespace: fiapx
 spec:
+  type: ClusterIP
   selector:
     app: auth-service
   ports:
     - protocol: TCP
-      port: 3000
+      port: 80
       targetPort: 3000

@@ -37,7 +37,7 @@ apply_infrastructure() {
     done
     echo ""
     echo -e "${YELLOW}  Aguardando databases...${NC}"
-    kubectl wait --for=condition=ready pod -l app=postgres-auth -n fiapx --timeout=120s 2>/dev/null || true
+    kubectl wait --for=condition=ready pod -l app=pgbouncer-auth -n fiapx --timeout=120s 2>/dev/null || true
     kubectl wait --for=condition=ready pod -l app=postgres-api -n fiapx --timeout=120s 2>/dev/null || true
     kubectl wait --for=condition=ready pod -l app=redis-api -n fiapx --timeout=60s 2>/dev/null || true
     echo ""
@@ -73,11 +73,11 @@ apply_service() {
 }
 
 show_help() {
-    echo "Uso: $0 [serviço1,serviço2,...] [--locust-auth] [--locust-api] [--locust]"
+    echo "Uso: $0 [serviço1,serviço2,...] [--locust-auth] [--locust]"
     echo ""
-    echo "Sem argumentos: sobe TUDO (infra + rabbitmq + auth + api + worker)"
+    echo "Sem argumentos: sobe TUDO (infra + rabbitmq + auth + api + worker + locust-auth)"
     echo ""
-    echo "Serviços: infra, rabbitmq, auth, api, worker, locust-auth, locust-api"
+    echo "Serviços: infra, rabbitmq, auth, api, worker, locust-auth"
     echo ""
     echo "Exemplos:"
     echo "  $0                     # Sobe tudo"
@@ -86,8 +86,7 @@ show_help() {
     echo "  $0 infra,rabbitmq      # Sobe infra e rabbitmq"
     echo "  $0 worker              # Sobe só o worker"
     echo "  $0 --locust-auth       # Sobe tudo + locust do auth"
-    echo "  $0 --locust-api        # Sobe tudo + locust da api"
-    echo "  $0 --locust            # Sobe tudo + ambos locust"
+    echo "  $0 --locust            # Sobe tudo + locust"
     exit 0
 }
 
@@ -100,13 +99,11 @@ echo ""
 
 apply_namespace
 
-# Se --locust-auth, --locust-api ou --locust foi passado em qualquer posição
+# Se --locust-auth ou --locust foi passado em qualquer posição
 DEPLOY_LOCUST_AUTH=false
-DEPLOY_LOCUST_API=false
 for arg in "$@"; do
     [[ "$arg" == "--locust-auth" ]] && DEPLOY_LOCUST_AUTH=true
-    [[ "$arg" == "--locust-api" ]] && DEPLOY_LOCUST_API=true
-    [[ "$arg" == "--locust" ]] && DEPLOY_LOCUST_AUTH=true && DEPLOY_LOCUST_API=true
+    [[ "$arg" == "--locust" ]] && DEPLOY_LOCUST_AUTH=true
 done
 
 # Se nenhum argumento (ou só --locust*), sobe tudo
@@ -120,28 +117,52 @@ if [[ "$SERVICES_ARG" == "all" ]]; then
     kubectl wait --for=condition=ready pod -l app=rabbitmq -n fiapx --timeout=90s 2>/dev/null || true
     echo ""
     apply_service auth
+    echo -e "${YELLOW}  Aguardando Auth Service...${NC}"
+    kubectl wait --for=condition=ready pod -l app=auth-service -n fiapx --timeout=120s
+    echo -e "${YELLOW}  Executando migrações Prisma (Auth)...${NC}"
+    AUTH_POD=$(kubectl get pods -n fiapx -l app=auth-service -o jsonpath="{.items[0].metadata.name}")
+    kubectl exec -n fiapx "$AUTH_POD" -- npx prisma migrate deploy || echo -e "${RED}  ✗ Falha ao executar migrações no Auth${NC}"
+    echo ""
     apply_service api
+    echo -e "${YELLOW}  Aguardando API Service...${NC}"
+    kubectl wait --for=condition=ready pod -l app=api-service -n fiapx --timeout=120s
+    echo -e "${YELLOW}  Executando migrações Prisma (API)...${NC}"
+    API_POD=$(kubectl get pods -n fiapx -l app=api-service -o jsonpath="{.items[0].metadata.name}")
+    kubectl exec -n fiapx "$API_POD" -- npx prisma migrate deploy || echo -e "${RED}  ✗ Falha ao executar migrações na API${NC}"
+    echo ""
     apply_service worker
+    apply_service locust-auth
 else
     IFS=',' read -ra SERVICES <<< "$SERVICES_ARG"
     for svc in "${SERVICES[@]}"; do
         svc=$(echo "$svc" | xargs) # trim
         if [[ "$svc" == "infra" || "$svc" == "infrastructure" ]]; then
             apply_infrastructure
+        elif [[ "$svc" == "auth" ]]; then
+            apply_service auth
+            echo -e "${YELLOW}  Aguardando Auth Service...${NC}"
+            kubectl wait --for=condition=ready pod -l app=auth-service -n fiapx --timeout=120s
+            echo -e "${YELLOW}  Executando migrações Prisma (Auth)...${NC}"
+            AUTH_POD=$(kubectl get pods -n fiapx -l app=auth-service -o jsonpath="{.items[0].metadata.name}")
+            kubectl exec -n fiapx "$AUTH_POD" -- npx prisma migrate deploy || echo -e "${RED}  ✗ Falha ao executar migrações no Auth${NC}"
+            echo ""
+        elif [[ "$svc" == "api" ]]; then
+            apply_service api
+            echo -e "${YELLOW}  Aguardando API Service...${NC}"
+            kubectl wait --for=condition=ready pod -l app=api-service -n fiapx --timeout=120s
+            echo -e "${YELLOW}  Executando migrações Prisma (API)...${NC}"
+            API_POD=$(kubectl get pods -n fiapx -l app=api-service -o jsonpath="{.items[0].metadata.name}")
+            kubectl exec -n fiapx "$API_POD" -- npx prisma migrate deploy || echo -e "${RED}  ✗ Falha ao executar migrações na API${NC}"
+            echo ""
         else
             apply_service "$svc"
         fi
     done
 fi
 
-# Locust Auth
-if [[ "$DEPLOY_LOCUST_AUTH" == true ]]; then
+# Locust Auth (caso tenha sido passado flag manual com outros serviços)
+if [[ "$DEPLOY_LOCUST_AUTH" == true && "$SERVICES_ARG" != "all" ]]; then
     apply_service locust-auth
-fi
-
-# Locust API
-if [[ "$DEPLOY_LOCUST_API" == true ]]; then
-    apply_service locust-api
 fi
 
 echo -e "${BLUE}==========================================${NC}"
