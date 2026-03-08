@@ -33,6 +33,6 @@ data:
 
   # Email Notifications (AWS SES)
   EMAIL_ENABLED: "true"
-  EMAIL_FROM: "noreply@fiapx.com"
+  EMAIL_FROM: "noreplyfiapx@gmail.com"
 
 
