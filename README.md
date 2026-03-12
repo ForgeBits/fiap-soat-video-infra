@@ -1,308 +1,110 @@
-# fiap-soat-video-infra
+# FIAP-SOAT Video Infrastructure
 
-Repositório de infraestrutura do projeto de microsserviços FIAP SOAT - Sistema de Processamento de Vídeos.
+Este repositório contém toda a infraestrutura e configuração de deploy para o ecossistema de processamento de vídeos da FIAP-X. O projeto utiliza Kubernetes para orquestração de containers, Terraform para provisionamento de recursos em nuvem e Locust para testes de carga.
 
-## 📋 Visão Geral
+## 🚀 Arquitetura do Sistema
 
-Este repositório contém toda a infraestrutura como código para deploy da aplicação em Kubernetes, incluindo:
+A solução é composta pelos seguintes serviços:
 
-- **Serviços de Aplicação**: Auth, API
-- **Message Broker**: RabbitMQ
-- **Bancos de Dados**: PostgreSQL (Auth e API)
-- **Observabilidade**: Elasticsearch, Kibana
-- **Infraestrutura Cloud**: Terraform (AWS EKS, RDS, S3, ElastiCache)
+*   **Auth Service (`auth.fiapx`):** Gerencia autenticação de usuários e emissão de tokens JWT.
+*   **API Service (`api.fiapx`):** Interface principal para recebimento de vídeos e consulta de status de processamento.
+*   **Worker Service (`worker.fiapx`):** Processador assíncrono que extrai frames de vídeos e realiza o processamento pesado.
+*   **Kibana (`kibana.fiapx`):** Interface de visualização de logs e métricas.
+*   **Infrastructure:** Componentes de suporte como PostgreSQL, Redis, RabbitMQ e Elasticsearch.
+*   **Ingress Controller (NGINX):** Ponto único de entrada que roteia requisições baseadas em domínios para os serviços internos.
 
-## 🏗️ Arquitetura
+---
 
+## 🛠️ Pré-requisitos
+
+Antes de iniciar, certifique-se de ter instalado:
+
+*   **Kubernetes Cluster:** (Minikube, Docker Desktop ou Cloud Provider)
+*   **kubectl:** Configurado para o seu cluster.
+*   **NGINX Ingress Controller:** Ativado no seu cluster.
+    *   *Minikube:* `minikube addons enable ingress`
+*   **Docker:** Para build de imagens.
+
+---
+
+## 💻 Configuração Local
+
+### 1. DNS Local
+Para acessar os serviços pelos nomes de domínio customizados, adicione as seguintes entradas ao seu arquivo `/etc/hosts` (Linux/Mac) ou `C:\Windows\System32\drivers\etc\hosts` (Windows):
+
+```text
+# Substitua 127.0.0.1 pelo IP do seu Ingress Controller se necessário (ex: minikube ip)
+127.0.0.1 auth.fiapx
+127.0.0.1 api.fiapx
+127.0.0.1 worker.fiapx
+127.0.0.1 kibana.fiapx
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Kubernetes Cluster                       │
-├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌──────────┐    ┌──────────┐    ┌──────────────────┐      │
-│  │   Auth   │    │   API    │    │    RabbitMQ      │      │
-│  │ Service  │◄───┤ Service  │◄───┤  Message Broker  │      │
-│  └────┬─────┘    └────┬─────┘    └──────────────────┘      │
-│       │               │                                      │
-│  ┌────▼─────┐    ┌───▼──────┐    ┌──────────────────┐      │
-│  │PostgreSQL│    │PostgreSQL│    │  Elasticsearch   │      │
-│  │   Auth   │    │   API    │    │   + Kibana       │      │
-│  │  (5Gi)   │    │  (5Gi)   │    │   (10Gi)         │      │
-│  └──────────┘    └──────────┘    └──────────────────┘      │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
 
-## 🚀 Quick Start
-
-### Pré-requisitos
-
-- `kubectl` configurado e conectado ao cluster
-- `envsubst` instalado (pacote `gettext`)
-- Arquivo `.env` na raiz do projeto
-
-### Deploy Completo
+### 2. Subir o Ambiente
+Utilize o script de automação para realizar o deploy completo de toda a infraestrutura e serviços:
 
 ```bash
-# 1. Configurar variáveis de ambiente
-cp .env.example .env
-# Edite o .env com suas credenciais
-
-# 2. Aplicar infraestrutura (PostgreSQL, Elasticsearch, Kibana)
-./commands/apply-infra.sh
-
-# 3. Aplicar RabbitMQ
-./commands/apply.sh rabbitmq
-
-# 4. Aplicar serviços
-./commands/apply.sh auth
-./commands/apply.sh api
+./commands/up.sh
 ```
+Este comando criará o namespace `fiapx`, aplicará todos os manifestos de infraestrutura, bancos de dados, serviços, ingress e executará as migrações necessárias.
 
-### Reset Completo
+---
 
+## 📊 Testes de Carga (Locust)
+
+O ambiente inclui uma instância do Locust pré-configurada para testar a escalabilidade do sistema.
+
+*   **Acesso:** [http://localhost:8089](http://localhost:8089) (ou via Ingress se configurado)
+*   **Comportamento:** O script simula usuários registrando, logando e enviando vídeos para processamento.
+*   **Dashboard:** As métricas estão separadas por prefixos: `AUTH:`, `API:` e `WORKER:`.
+
+Para recarregar o script do Locust após alterações:
 ```bash
-# Remover e reaplicar tudo
-./commands/reset-all.sh --rerun
-
-# Apenas remover
-./commands/reset-all.sh
+./commands/reload.sh locust-auth
 ```
 
-## 📁 Estrutura do Projeto
+---
 
-```
-.
-├── commands/               # Scripts de gerenciamento
-│   ├── apply.sh           # Aplicar serviço específico
-│   ├── apply-infra.sh     # Aplicar infraestrutura
-│   ├── apply-secrets.sh   # Reaplicar secrets
-│   ├── remove.sh          # Remover serviço
-│   ├── restart.sh         # Reiniciar serviço
-│   ├── reset-all.sh       # Reset completo
-│   ├── load-test.sh       # Teste de carga
-│   └── README.md          # Documentação dos comandos
-│
-├── k8s/                   # Manifests Kubernetes
-│   ├── auth/              # Serviço de autenticação
-│   │   ├── configmap.yaml
-│   │   ├── deployment.yaml
-│   │   ├── secret.yaml
-│   │   └── service.yaml
-│   ├── api/               # Serviço de API
-│   │   ├── configmap.yaml
-│   │   ├── deployment.yaml
-│   │   ├── secret.yaml
-│   │   └── service.yaml
-│   ├── rabbitmq/          # Message Broker
-│   │   ├── configmap.yaml
-│   │   ├── deployment.yaml
-│   │   ├── secret.yaml
-│   │   └── service.yaml
-│   └── infrastructure/    # Infraestrutura base
-│       ├── postgres-auth.yaml
-│       ├── postgres-api.yaml
-│       ├── elasticsearch.yaml
-│       └── kibana.yaml
-│
-└── terraform/             # Infraestrutura AWS
-    ├── main.tf
-    ├── eks.tf
-    ├── rds.tf
-    ├── s3.tf
-    ├── vpc.tf
-    ├── security_groups.tf
-    └── cache_mq.tf
-```
+## 📂 Estrutura do Projeto
 
-## 🗄️ Bancos de Dados
+*   `k8s/`: Manifestos Kubernetes organizados por serviço.
+    *   `infrastructure/`: Bancos de dados (Postgres, Redis) e logs (Elasticsearch).
+    *   `rabbitmq/`: Mensageria assíncrona.
+    *   `ingress.yaml`: Configuração central de roteamento NGINX.
+*   `terraform/`: Código para provisionamento de infraestrutura em nuvem (EKS, RDS, S3).
+*   `commands/`: Scripts utilitários para facilitar o gerenciamento (`up.sh`, `reload.sh`, `down.sh`).
 
-### PostgreSQL Auth (via PGBouncer)
-- **Host**: `pgbouncer-auth:5432`
-- **Database**: `auth_db`
-- **User**: `auth_user`
-- **Connection String**: `postgresql://auth_user:auth_password_123@pgbouncer-auth:5432/auth_db`
+---
 
-### PostgreSQL API
-- **Host**: `postgres-api:5432`
-- **Database**: `api_db`
-- **User**: `api_user`
-- **Storage**: 5Gi (persistente)
-- **Connection String**: `postgresql://api_user:password@postgres-api:5432/api_db`
+## 📈 Escalabilidade e HPA
 
-kubectl exec -it deployment/redis-api -- redis-cli
-# Redis API
+Os principais serviços (`auth`, `api` e `worker`) possuem **Horizontal Pod Autoscaler (HPA)** configurado para garantir a disponibilidade sob carga:
 
-### Acessar Recursos
+*   **Métricas:** O escalonamento é baseado no uso de **CPU** e **Memória**.
+*   **Limites:** Geralmente configurado para manter o uso entre 50% e 80%, escalando entre 1 e 10 réplicas conforme a demanda detectada pelo `metrics-server`.
 
-- **Persistence**: AOF (append-only file)
-- **Eviction Policy**: allkeys-lru
-- **Max Memory**: 256MB
-- **Storage**: 2Gi (persistente)
-- **Host**: `redis-api:6379`
-### Redis API (Cache)
+---
 
-```bash
-# PostgreSQL Auth
-kubectl exec -it deployment/pgbouncer-auth -- psql -h localhost -U auth_user -d auth_db
+## ⚙️ Guia de Comandos
 
-# PostgreSQL API
-kubectl exec -it statefulset/postgres-api -- psql -U api_user -d api_db
-```
+Utilize os scripts na pasta `commands/` para gerenciar o ciclo de vida da infraestrutura.
 
-## 📊 Observabilidade
+| Comando | Descrição |
+| :--- | :--- |
+| `./commands/up.sh` | Sobe todo o cluster (infra + serviços + ingress). |
+| `./commands/down.sh` | Remove todos os recursos do Kubernetes (incluindo volumes). |
+| `./commands/reload.sh [service]` | Recarrega ConfigMaps/Secrets e reinicia os pods de um serviço. |
+| `./commands/stabilize.sh [service]` | Força a estabilização de réplicas do HPA para o mínimo. |
 
-### Elasticsearch
-- **URL**: `http://elasticsearch:9200`
-- **Storage**: 10Gi (persistente)
-- **Java Heap**: 512MB
+### Exemplos de Uso:
 
-### Kibana
-- **URL**: `http://kibana:5601`
-- **Dashboard**: Visualização de logs e métricas
+*   **Subir apenas um serviço:** `./commands/up.sh auth,api`
+*   **Recarregar após mudar o .env:** `./commands/reload.sh api`
+*   **Remover apenas o Locust:** `./commands/down.sh locust-auth`
+*   **Acompanhar escalabilidade:** `kubectl get hpa -n fiapx`
 
-### Acessar Kibana
-
-```bash
-# Port-forward para acessar localmente
-kubectl port-forward service/kibana 5601:5601
-
-# Acessar: http://localhost:5601
-```
-
-## 🐰 RabbitMQ
-
-- **Management UI**: `http://rabbitmq:15672`
-- **AMQP Port**: `5672`
-- **Default User**: Configurado via secret
-
-```bash
-# Port-forward para acessar management UI
-kubectl port-forward service/rabbitmq 15672:15672
-
-# Acessar: http://localhost:15672
-```
-
-## 🔧 Comandos Úteis
-
-Ver documentação completa em: [commands/README.md](./commands/README.md)
-
-```bash
-# Aplicar serviço
-./commands/apply.sh <service>
-
-# Remover serviço
-./commands/remove.sh <service>
-
-# Reiniciar serviço (após mudança de env)
-./commands/restart.sh <service>
-
-# Reaplicar secrets
-./commands/apply-secrets.sh
-
-# Teste de carga
-./commands/load-test.sh [rps] [duration]
-
-# Reset completo com reaplicação
-./commands/reset-all.sh --rerun
-```
-
-## 🔐 Variáveis de Ambiente
-
-Criar arquivo `.env` na raiz do projeto:
-
-```env
-# Auth Service
-AUTH_POSTGRES_PASSWORD=sua_senha_auth
-AUTH_DATABASE_URL=postgresql://auth_user:auth_password_123@pgbouncer-auth:5432/auth_db
-AUTH_JWT_SECRET=seu_jwt_secret_auth
-
-# API Service
-API_DB_PASSWORD=sua_senha_api
-API_DATABASE_URL=postgresql://api_user:senha@postgres-api:5432/api_db
-API_RABBITMQ_PASSWORD=sua_senha_rabbitmq
-API_AWS_ACCESS_KEY_ID=AKIAXXXXXXXXXXXXXXXX
-AWS_SECRET_ACCESS_KEY=sua_secret_key_aws
-API_JWT_SECRET=seu_jwt_secret_api
-
-# RabbitMQ
-RABBITMQ_DEFAULT_USER=admin
-RABBITMQ_DEFAULT_PASS=sua_senha_rabbitmq
-```
-
-## ☁️ Terraform (AWS)
-
-Infraestrutura provisionada na AWS:
-
-- **EKS**: Cluster Kubernetes
-- **RDS**: PostgreSQL gerenciado
-- **S3**: Armazenamento de objetos
-- **ElastiCache**: Redis cache
-- **VPC**: Rede privada
-- **Security Groups**: Regras de firewall
-
-```bash
-cd terraform/
-terraform init
-terraform plan
-terraform apply
-```
-
-## 🧪 Testes
-
-### Teste de Carga
-
-```bash
-# 10 requisições por segundo durante 30 segundos
-./commands/load-test.sh 10 30
-
-# Com configurações customizadas
-./commands/load-test.sh 20 60 http://api-service:8082/videos/process
-```
-
-## 📝 Logs
-
-```bash
-# Ver logs de um serviço
-kubectl logs -f deployment/auth-service
-kubectl logs -f deployment/api-service
-kubectl logs -f deployment/rabbitmq
-
-# Ver logs de todos os pods de um serviço
-kubectl logs -f -l app=auth-service
-```
-
-## 🔍 Troubleshooting
-
-```bash
-# Ver status dos pods
-kubectl get pods
-
-# Descrever pod com problemas
-kubectl describe pod <pod-name>
-
-# Ver eventos do cluster
-kubectl get events --sort-by='.lastTimestamp'
-
-# Verificar PVCs
-kubectl get pvc
-
-# Verificar secrets
-kubectl get secrets
-```
-
-## 📚 Documentação Adicional
-
-- [Comandos de Gerenciamento](./commands/README.md)
-- [Terraform AWS](./terraform/README.md) _(se existir)_
+---
 
 ## 🤝 Contribuindo
 
-1. Clone o repositório
-2. Crie uma branch para sua feature
-3. Faça commit das mudanças
-4. Abra um Pull Request
-
-## 📄 Licença
-
-FIAP SOAT - Projeto Acadêmico
+FIAP SOAT - Projeto Acadêmico de Processamento de Vídeos.

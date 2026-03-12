@@ -4,11 +4,11 @@ metadata:
   name: worker-service
   namespace: fiapx
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: worker-service
   ports:
     - name: http
       protocol: TCP
-      port: 3002
+      port: 82
       targetPort: 3002

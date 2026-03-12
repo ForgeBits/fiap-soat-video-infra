@@ -20,4 +20,3 @@ spec:
       port: 5557
       targetPort: 5557
   type: ClusterIP
-

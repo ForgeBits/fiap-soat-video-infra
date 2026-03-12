@@ -4,11 +4,11 @@ metadata:
   name: api-service
   namespace: fiapx
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: api-service
   ports:
     - name: http
       protocol: TCP
-      port: 3001
+      port: 81
       targetPort: 3001

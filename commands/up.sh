@@ -132,6 +132,10 @@ if [[ "$SERVICES_ARG" == "all" ]]; then
     echo ""
     apply_service worker
     apply_service locust-auth
+    
+    echo -e "${YELLOW}[ingress] Aplicando...${NC}"
+    kubectl apply -f "$ROOT_DIR/k8s/ingress.yaml"
+    echo -e "${GREEN}  ✓ ingress${NC}"
 else
     IFS=',' read -ra SERVICES <<< "$SERVICES_ARG"
     for svc in "${SERVICES[@]}"; do

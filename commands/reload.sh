@@ -86,8 +86,8 @@ reload_service() {
 
     # Rollout restart
     echo -e "${YELLOW}  Reiniciando pods...${NC}"
-    kubectl rollout restart deployment/"$deployment" -n fiapx
-    kubectl rollout status deployment/"$deployment" -n fiapx --timeout=120s
+    kubectl rollout restart deployment/"$deployment" -n fiapx 2>/dev/null || echo -e "${YELLOW}  ! Deployment $deployment não encontrado ou em transição${NC}"
+    kubectl rollout status deployment/"$deployment" -n fiapx --timeout=120s 2>/dev/null || true
 
     # Se for o auth ou api, rodar migrações após o restart
     if [[ "$svc" == "auth" ]]; then

@@ -17,7 +17,7 @@ data:
   BATCH_VIDEO_PROCESSING_QUEUE: "batch.video.processing"
 
   # Callback URL for notifying the main application about video processing status
-  VIDEO_CALLBACK_URL: "http://api-service:3001/videos/callback"
+  VIDEO_CALLBACK_URL: "http://api-service:81/videos/callback"
 
   # AWS S3 Configuration
   AWS_REGION: "us-east-1"
