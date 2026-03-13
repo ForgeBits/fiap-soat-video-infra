@@ -2,7 +2,7 @@
 
 Este repositório contém toda a infraestrutura e configuração de deploy para o ecossistema de processamento de vídeos da FIAP-X. O projeto utiliza Kubernetes para orquestração de containers, Terraform para provisionamento de recursos em nuvem e Locust para testes de carga.
 
-## 🚀 Arquitetura do Sistema
+## 🚀 Arquitetura do Sistema.
 
 A solução é composta pelos seguintes serviços:
 
