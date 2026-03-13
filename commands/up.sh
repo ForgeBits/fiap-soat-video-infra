@@ -131,6 +131,7 @@ if [[ "$SERVICES_ARG" == "all" ]]; then
     kubectl exec -n fiapx "$API_POD" -- npx prisma migrate deploy || echo -e "${RED}  ✗ Falha ao executar migrações na API${NC}"
     echo ""
     apply_service worker
+    kubectl apply -f "$ROOT_DIR/k8s/worker/hpa.yaml"
     apply_service locust-auth
     
     echo -e "${YELLOW}[ingress] Aplicando...${NC}"
