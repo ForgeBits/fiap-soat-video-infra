@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-config
+  namespace: fiapx
+data:
+  PORT: "3000"
+  POSTGRES_HOST: "postgres-auth"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "auth_db"
+  POSTGRES_USER: "auth_user"
+  JWT_EXPIRES_IN: "7d"
+  LOG_LEVEL: "info"
+  ELASTICSEARCH_URL: "http://elasticsearch:9200"
+  ELASTICSEARCH_INDEX: "auth-service-logs"

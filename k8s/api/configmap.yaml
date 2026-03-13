@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  namespace: fiapx
+data:
+  # Application
+  NODE_ENV: "development"
+  PORT: "3001"
+  API_VERSION: "v1"
+
+  # Database (PostgreSQL)
+  DB_USER: "api_user"
+  DB_NAME: "api_db"
+  DB_PORT: "5432"
+  DB_HOST: "postgres-api"
+
+  # Redis (Cache)
+  REDIS_HOST: "redis-api"
+  REDIS_PORT: "6379"
+
+  # RabbitMQ (Message Queue)
+  RABBITMQ_HOST: "rabbitmq-service"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_MANAGEMENT_PORT: "15672"
+  RABBITMQ_USER: "admin"
+  RABBITMQ_TLS: "false"
+  RABBITMQ_QUEUE_PROCESSING: "batch.video.processing"
+
+  # AWS S3 (Storage)
+  AWS_REGION: "us-east-1"
+  AWS_S3_BUCKET: "fiap-video-worker"
+
+  # Auth Service
+  AUTH_GATE: "http://auth-service:80"
+  MOCK_AUTH: "false"
+
+  # Monitoring (Elasticsearch + Kibana)
+  ELASTICSEARCH_HOST: "elasticsearch"
+  ELASTICSEARCH_PORT: "9200"
+  ELASTICSEARCH_INDEX: "api-fiapx-logs"
+  KIBANA_PORT: "5601"
+  LOG_LEVEL: "info"
+
+  # Application Config
+  MAX_FPS: "60"
+  MAX_VIDEO_DURATION_MINUTES: "10"
+  SIGNED_URL_EXPIRATION_DAYS: "7"
+  MAX_VIDEOS_PER_REQUEST: "10"
+  MAX_FILE_SIZE_MB: "500"
+  CACHE_TTL_SECONDS: "300"
+  USE_S3_STREAMING: "true"
+  MULTIPART_THRESHOLD_MB: "10"
+  MULTIPART_CHUNK_SIZE_MB: "10"
+  MULTIPART_QUEUE_SIZE: "15"

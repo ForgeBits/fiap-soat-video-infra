@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-auth-config
+  namespace: fiapx
+data:
+  custom.conf: |
+    # Connection Settings
+    max_connections = 300
+    
+    # Memory Settings
+    shared_buffers = 512MB
+    effective_cache_size = 1536MB
+    maintenance_work_mem = 128MB
+    work_mem = 2MB
+    
+    # WAL Settings
+    wal_buffers = 16MB
+    min_wal_size = 1GB
+    max_wal_size = 4GB
+    checkpoint_completion_target = 0.9
+    
+    # Query Planner
+    random_page_cost = 1.1
+    effective_io_concurrency = 200
+    default_statistics_target = 100
+    
+    # Parallel Query
+    max_worker_processes = 4
+    max_parallel_workers_per_gather = 2
+    max_parallel_workers = 4
+    max_parallel_maintenance_workers = 2
+    
+    # Timeouts
+    statement_timeout = 30000
+    idle_in_transaction_session_timeout = 60000
+    
+    # Logging (for debugging)
+    log_connections = on
+    log_disconnections = on
+    log_duration = off
+    log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+

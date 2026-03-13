@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-config
+  namespace: fiapx
+data:
+  # Server Configuration
+  PORT: "3002"
+  NODE_ENV: "development"
+
+  # RabbitMQ Configuration
+  RABBITMQ_HOST: "rabbitmq-service"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USER: "admin"
+  VIDEO_PROCESSING_QUEUE: "video.processing"
+  VIDEO_COMPLETED_QUEUE: "video.completed"
+  BATCH_VIDEO_PROCESSING_QUEUE: "batch.video.processing"
+
+  # Callback URL for notifying the main application about video processing status
+  VIDEO_CALLBACK_URL: "http://api-service:81/videos/callback"
+
+  # AWS S3 Configuration
+  AWS_REGION: "us-east-1"
+  AWS_S3_BUCKET: "fiap-video-worker"
+
+  # Elasticsearch Configuration
+  ELASTICSEARCH_ENABLED: "true"
+  ELASTICSEARCH_HOST: "elasticsearch"
+  ELASTICSEARCH_PORT: "9200"
+
+  # Logging
+  LOG_LEVEL: "info"
+
+  # Email Notifications (AWS SES)
+  EMAIL_ENABLED: "true"
+  EMAIL_FROM: "noreplyfiapx@gmail.com"
+
+

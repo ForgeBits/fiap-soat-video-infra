@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-master
+  namespace: fiapx
+  labels:
+    app: locust
+    role: master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: locust
+      role: master
+  template:
+    metadata:
+      labels:
+        app: locust
+        role: master
+    spec:
+      containers:
+        - name: locust
+          image: locustio/locust:latest
+          ports:
+            - containerPort: 8089
+              name: web
+            - containerPort: 5557
+              name: master
+          env:
+            - name: AUTH_HOST
+              value: "http://auth-service:80"
+            - name: API_HOST
+              value: "http://api-service:81"
+            - name: WORKER_HOST
+              value: "http://worker-service:82"
+            - name: LOCUST_USERS
+              value: "100"
+            - name: LOCUST_SPAWN_RATE
+              value: "10"
+            - name: LOCUST_RUN_TIME
+              value: "5m"
+            - name: LOCUST_LOGLEVEL
+              value: "INFO"
+          volumeMounts:
+            - name: locust-script
+              mountPath: /home/locust
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          command:
+            - "locust"
+            - "-f"
+            - "/home/locust/locustfile.py"
+            - "--web-host=0.0.0.0"
+            - "--web-port=8089"
+      volumes:
+        - name: locust-script
+          configMap:
+            name: locust-script
